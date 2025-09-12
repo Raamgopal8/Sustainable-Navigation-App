@@ -8,7 +8,7 @@ const API_KEY = "da137f2b-3029-4bee-9978-9108a07e5cfc";
  * @returns {Promise<Array>} Array of route objects
  */
 async function getRoutes(source, destination) {
-  const url = `https://graphhopper.com/api/1/route?point=${source.lat},${source.lng}&point=${destination.lat},${destination.lng}&vehicle=car&key=${API_KEY}`;
+  const url = `https://graphhopper.com/api/1/route?point=${source.lat},${source.lng}&point=${destination.lat},${destination.lng}&vehicle=car&key=${API_KEY}&points_encoded=true`;
   try {
     const response = await fetch(url);
     if (!response.ok) {
@@ -17,12 +17,23 @@ async function getRoutes(source, destination) {
     }
     const data = await response.json();
     if (data.paths && data.paths.length > 0) {
-      // Return array of route summaries
-      return data.paths.map(routeInfo => ({
-        distance: routeInfo.distance / 1000, // km
-        time: (routeInfo.time / 1000) / 60, // minutes
-        points: routeInfo.points
-      }));
+      // Return array of route objects matching Google Directions API format
+      return data.paths.map(routeInfo => {
+        // GraphHopper sometimes returns points as an object {encoded: "..."}
+        let encodedPolyline = routeInfo.points;
+        if (encodedPolyline && typeof encodedPolyline === 'object' && encodedPolyline.encoded) {
+          encodedPolyline = encodedPolyline.encoded;
+        }
+        return {
+          legs: [{
+            duration: { value: Math.round(routeInfo.time / 1000) }, // seconds
+            distance: { value: Math.round(routeInfo.distance) }, // meters
+          }],
+          overview_polyline: encodedPolyline,
+          summary: routeInfo.description || "Route",
+          points: encodedPolyline, // for compatibility with frontend
+        };
+      });
     } else {
       return [];
     }
