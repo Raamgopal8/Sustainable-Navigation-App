@@ -1,4 +1,8 @@
+
 import React, { useState } from "react";
+import { NavigationContainer } from '@react-navigation/native';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
+import {Signup} from './Signup';
 import {
   View,
   Text,
@@ -50,8 +54,38 @@ function decodePolyline(encoded) {
   }
   return points;
 }
+const Auth = () => {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const navigation = useNavigation();
 
-export default function HomeScreen({ navigation }) {
+  const handleLogin = () => {
+    let formErrors = {};
+
+    if (!username.trim()) formErrors.username = "Username is required";
+    if (!email.trim()) {
+      formErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      formErrors.email = "Enter a valid email";
+    }
+    if (!password.trim()) {
+      formErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      formErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(formErrors);
+
+    if (Object.keys(formErrors).length === 0) {
+      alert(`✅ Logged in as: ${username} (${email})`);
+      // navigation.navigate("Home"); // example
+    }
+  };
+}
+
+function HomeScreen({ navigation }) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [routeCoords, setRouteCoords] = useState([]);
@@ -110,15 +144,13 @@ export default function HomeScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="green" />
-
       {/* Navbar */}
       <View style={styles.navbar}>
         <Text style={styles.navTitle}>GreenPath</Text>
-        <TouchableOpacity onPress={() => Alert.alert("Menu", "Drawer will open here")}>
-              <Image source={require("./assets/menu.png")} style={{ width: 28, height: 28, marginTop: 10, top: 10, tintColor: "#f1e8e8ff" }} />
+        <TouchableOpacity onPress={() => navigation.openDrawer()}>
+          <Image source={require("./assets/menu.png")} style={{ width: 28, height: 28, marginTop: 10, top: 10, tintColor: "#fff" }} />
         </TouchableOpacity>
       </View>
-
       {/* Map */}
       <View style={styles.mapBox}>
         {mapCenter ? (
@@ -151,7 +183,6 @@ export default function HomeScreen({ navigation }) {
           />
         )}
       </View>
-
       {/* Inputs */}
       <View style={styles.inputContainer}>
         <TextInput
@@ -168,12 +199,164 @@ export default function HomeScreen({ navigation }) {
           value={destination}
           onChangeText={setDestination}
         />
-
         <TouchableOpacity style={styles.button} onPress={fetchRoute}>
           <Text style={styles.buttonText}>{loading ? "Loading..." : "Submit"}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
+  );
+}
+
+
+
+function SignUp() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>SignUp</Text>
+    </View>
+  );
+}
+
+
+function ProfileScreen() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Profile</Text>
+    </View>
+  );
+}
+
+function HealthPersonalizationScreen() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Health Personalization</Text>
+    </View>
+  );
+}
+
+function GreenPointsScreen() {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Green Points</Text>
+    </View>
+  );
+}
+
+function LoginScreen() {
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState({});
+  const navigation = null; // If you want navigation, pass it as a prop
+
+  /**
+   * Handles the login form submission by validating user input fields.
+   * Checks for required username, valid email format, and password length.
+   * Sets error messages for invalid fields and proceeds with login if all validations pass.
+   *
+   * @function
+   * @returns {void}
+   */
+  const handleLogin = () => {
+    let formErrors = {};
+
+    if (!username.trim()) formErrors.username = "Username is required";
+    if (!email.trim()) {
+      formErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      formErrors.email = "Enter a valid email";
+    }
+    if (!password.trim()) {
+      formErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      formErrors.password = "Password must be at least 6 characters";
+    }
+
+    setErrors(formErrors);
+
+    if (Object.keys(formErrors).length === 0) {
+      alert(`✅ Logged in as: ${username} (${email})`);
+      // navigation.navigate("Home"); // example
+    }
+  };
+
+  return (
+    <View style={styles.page}>
+      <View style={styles.container1}>
+        <Text style={styles.title1}>Login</Text>
+
+        <TextInput
+          placeholder="Username"
+          placeholderTextColor="#aaa"
+          value={username}
+          onChangeText={setUsername}
+          style={styles.input1}
+        />
+        {errors.username && <Text style={styles.error}>{errors.username}</Text>}
+
+        <TextInput
+          placeholder="Email"
+          placeholderTextColor="#aaa"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          style={styles.input1}
+        />
+        {errors.email && <Text style={styles.error}>{errors.email}</Text>}
+
+        <TextInput
+          placeholder="Password"
+          placeholderTextColor="#aaa"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input1}
+        />
+        {errors.password && <Text style={styles.error}>{errors.password}</Text>}
+
+        <TouchableOpacity onPress={handleLogin} style={styles.button}>
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.signupText}>
+          Don’t have an account?{" "}
+          <Text
+          
+            style={styles.signupLink}
+            onPress={() => navigation && navigation.navigate && navigation.navigate("SignUp")}
+          >
+            Sign Up
+          </Text>
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const Drawer = createDrawerNavigator();
+
+function CustomDrawerContent(props) {
+  return (
+    <DrawerContentScrollView {...props}>
+      <DrawerItemList {...props} />
+    </DrawerContentScrollView>
+  );
+}
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Drawer.Navigator drawerContent={props => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          headerShown: false,
+        }}>
+        <Drawer.Screen name="Home" component={HomeScreen} />
+        {/* <Drawer.Screen name="Profile" component={ProfileScreen} /> */}
+        <Drawer.Screen name="Health Personalization" component={HealthPersonalizationScreen} />
+        <Drawer.Screen name="Green Points" component={GreenPointsScreen} />
+        <Drawer.Screen name="Login" component={LoginScreen} />
+      </Drawer.Navigator>
+    </NavigationContainer>
   );
 }
 
@@ -215,4 +398,62 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  page: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#111",
+  },
+  container1: {
+    padding: 30,
+    width: 320,
+    borderRadius: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backdropFilter: "blur(10px)", // works only on web, ignore on mobile
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  title1: {
+    color: "#66bb6a",
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 15,
+  },
+  input1: {
+    width: "100%",
+    marginVertical: 8,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    color: "#fff",
+  },
+  button1: {
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#43a047",
+  },
+  buttonText1: {
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#fff",
+  },
+  error: {
+    color: "red",
+    fontSize: 12,
+    marginLeft: 5,
+  },
+  signupText: {
+    marginTop: 15,
+    fontSize: 14,
+    color: "#ccc",
+    textAlign: "center",
+  },
+  signupLink: {
+    color: "#2e7d32",
+    fontWeight: "bold",
+  },
 });
