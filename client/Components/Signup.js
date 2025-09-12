@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 
-const SignUp = () => {
-  const navigate = useNavigate();
+const SignUp = ({ navigation }) => {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,144 +30,138 @@ const SignUp = () => {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.container}>
-        <h2 style={{ color: "#66bb6a", marginBottom: "15px" }}>Sign Up</h2>
+    <View style={styles.page}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Sign Up</Text>
 
-        {/* Username */}
-        <input
-          type="text"
+        <TextInput
           placeholder="Username"
           value={username}
-          onChange={(e) => {
-            setUsername(e.target.value);
+          onChangeText={(text) => {
+            setUsername(text);
             setErrors((prev) => ({ ...prev, username: "" }));
           }}
           style={styles.input}
         />
-        {errors.username && <p style={styles.error}>{errors.username}</p>}
+        {errors.username ? <Text style={styles.error}>{errors.username}</Text> : null}
 
-        {/* Email */}
-        <input
-          type="email"
+        <TextInput
           placeholder="Email"
           value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
+          onChangeText={(text) => {
+            setEmail(text);
             setErrors((prev) => ({ ...prev, email: "" }));
           }}
           style={styles.input}
+          keyboardType="email-address"
         />
-        {errors.email && <p style={styles.error}>{errors.email}</p>}
+        {errors.email ? <Text style={styles.error}>{errors.email}</Text> : null}
 
-        {/* Password */}
-        <input
-          type="password"
+        <TextInput
           placeholder="Password"
           value={password}
-          onChange={(e) => {
-            setPassword(e.target.value);
+          onChangeText={(text) => {
+            setPassword(text);
             setErrors((prev) => ({ ...prev, password: "" }));
           }}
           style={styles.input}
+          secureTextEntry
         />
-        {errors.password && <p style={styles.error}>{errors.password}</p>}
+        {errors.password ? <Text style={styles.error}>{errors.password}</Text> : null}
 
-        {/* Confirm Password */}
-        <input
-          type="password"
+        <TextInput
           placeholder="Confirm Password"
           value={confirmPassword}
-          onChange={(e) => {
-            setConfirmPassword(e.target.value);
+          onChangeText={(text) => {
+            setConfirmPassword(text);
             setErrors((prev) => ({ ...prev, confirmPassword: "" }));
           }}
           style={styles.input}
+          secureTextEntry
         />
-        {errors.confirmPassword && (
-          <p style={styles.error}>{errors.confirmPassword}</p>
-        )}
+        {errors.confirmPassword ? <Text style={styles.error}>{errors.confirmPassword}</Text> : null}
 
-        {/* Sign-Up Button */}
-        <button onClick={handleSignUp} style={styles.button}>
-          Sign Up
-          <span style={styles.shine}></span>
-        </button>
+        <TouchableOpacity onPress={handleSignUp} style={styles.button}>
+          <Text style={styles.buttonText}>Sign Up</Text>
+        </TouchableOpacity>
 
-        {/* Login Link */}
-        <p style={{ marginTop: "15px", color: "#555", fontSize: "14px" }}>
-          Already have an account?{" "}
-          <Link to="/" style={{ color: "#2e7d32", fontWeight: "bold" }}>
+        <Text style={styles.loginText}>
+          Already have an account?{' '}
+          <Text style={styles.loginLink} onPress={() => navigation && navigation.navigate && navigation.navigate('Login')}>
             Login
-          </Link>
-        </p>
-      </div>
-    </div>
+          </Text>
+        </Text>
+      </View>
+    </View>
   );
 };
 
-const styles = {
+
+const styles = StyleSheet.create({
   page: {
-    display: "flex",
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    height: "100vh",
-    padding: "20px",
-    boxSizing: "border-box",
+    backgroundColor: "#111",
+    padding: 20,
   },
   container: {
-    padding: "30px",
-    width: "320px",
-    borderRadius: "15px",
-    background: "rgba(255, 255, 255, 0.1)", // glass effect
-    backdropFilter: "blur(10px)",
-    boxShadow:
-      "0 0 25px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(255,255,255,0.2)",
-    color: "#fff",
+    padding: 30,
+    width: 320,
+    borderRadius: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    alignItems: "center",
+  },
+  title: {
+    color: "#66bb6a",
+    fontSize: 22,
+    fontWeight: "bold",
     textAlign: "center",
-    position: "relative",
+    marginBottom: 15,
   },
   input: {
-    display: "block",
-    width: "95%",
-    margin: "10px 0",
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    outline: "none",
+    width: "100%",
+    marginVertical: 8,
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    color: "#fff",
+    backgroundColor: "#222",
   },
   button: {
-    width: "101%",
-    padding: "12px",
-    background: "linear-gradient(90deg, #66bb6a, #43a047)",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: "#43a047",
+    width: "100%",
+    alignItems: "center",
+  },
+  buttonText: {
+    textAlign: "center",
     fontWeight: "bold",
-    cursor: "pointer",
-    marginTop: "10px",
-    position: "relative",
-    overflow: "hidden",
+    color: "#fff",
+    fontSize: 16,
   },
   error: {
     color: "red",
-    fontSize: "12px",
-    margin: "0 0 8px 5px",
-    textAlign: "left",
+    fontSize: 12,
+    marginLeft: 5,
+    alignSelf: "flex-start",
   },
-};
-
-// Shine animation
-const styleSheet = document.styleSheets[0];
-styleSheet.insertRule(
-  `
-@keyframes shine {
-  0% { left: -75%; }
-  50% { left: 100%; }
-  100% { left: 100%; }
-}
-`,
-  styleSheet.cssRules.length
-);
+  loginText: {
+    marginTop: 15,
+    fontSize: 14,
+    color: "#ccc",
+    textAlign: "center",
+  },
+  loginLink: {
+    color: "#2e7d32",
+    fontWeight: "bold",
+  },
+});
 
 export default SignUp;

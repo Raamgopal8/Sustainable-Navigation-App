@@ -111,7 +111,9 @@ router.post("/optimize", async (req, res) => {
           pollutants,
           trafficMinutes,
           score,
-          scoreComponents: components
+          scoreComponents: components,
+          distance: route.legs && route.legs[0] && route.legs[0].distance && route.legs[0].distance.value ? route.legs[0].distance.value : null,
+          duration: route.legs && route.legs[0] && route.legs[0].duration && route.legs[0].duration.value ? route.legs[0].duration.value : null
         };
       })
     );

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
-import {Signup} from './Signup';
+// import {Signup} from './Signup';
 import {
   View,
   Text,
@@ -91,6 +91,7 @@ function HomeScreen({ navigation }) {
   const [routeCoords, setRouteCoords] = useState([]);
   const [mapCenter, setMapCenter] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [routeInfo, setRouteInfo] = useState(null); // { distance, duration }
 
   const LOCATIONIQ_API_KEY = "pk.aa5bbd56aa898cd16d711a045d52a2c9";
 
@@ -133,6 +134,10 @@ function HomeScreen({ navigation }) {
       }
 
       setRouteCoords(coords);
+      setRouteInfo({
+        distance: bestRoute.distance, // meters
+        duration: bestRoute.duration, // seconds
+      });
     } catch (err) {
       console.error(err);
       Alert.alert("Error", "Could not fetch route");
@@ -183,25 +188,36 @@ function HomeScreen({ navigation }) {
           />
         )}
       </View>
-      {/* Inputs */}
+      {/* Inputs or Route Info */}
       <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Source (e.g. Chennai)"
-          placeholderTextColor="#555"
-          value={source}
-          onChangeText={setSource}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Enter Destination (e.g. Erode)"
-          placeholderTextColor="#555"
-          value={destination}
-          onChangeText={setDestination}
-        />
-        <TouchableOpacity style={styles.button} onPress={fetchRoute}>
-          <Text style={styles.buttonText}>{loading ? "Loading..." : "Submit"}</Text>
-        </TouchableOpacity>
+        {routeInfo ? (
+          <View style={styles.routeInfoBox}>
+            <Text style={styles.routeInfoText}>Source: {source}</Text>
+            <Text style={styles.routeInfoText}>Destination: {destination}</Text>
+            <Text style={styles.routeInfoText}>Distance: {routeInfo.distance ? (routeInfo.distance / 1000).toFixed(2) + ' km' : '-'}</Text>
+            <Text style={styles.routeInfoText}>Time Taken: {routeInfo.duration ? Math.ceil(routeInfo.duration / 60) + ' min' : '-'}</Text>
+          </View>
+        ) : (
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Source (e.g. Chennai)"
+              placeholderTextColor="#555"
+              value={source}
+              onChangeText={setSource}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Destination (e.g. Erode)"
+              placeholderTextColor="#555"
+              value={destination}
+              onChangeText={setDestination}
+            />
+            <TouchableOpacity style={styles.button} onPress={fetchRoute}>
+              <Text style={styles.buttonText}>{loading ? "Loading..." : "Submit"}</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -209,13 +225,13 @@ function HomeScreen({ navigation }) {
 
 
 
-function SignUp() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>SignUp</Text>
-    </View>
-  );
-}
+// function SignUp() {
+//   return (
+//     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+//       <Text>SignUp</Text>
+//     </View>
+//   );
+// }
 
 
 function ProfileScreen() {
@@ -320,13 +336,13 @@ function LoginScreen() {
 
         <Text style={styles.signupText}>
           Don’t have an account?{" "}
-          <Text
+          {/* <Text
           
             style={styles.signupLink}
-            onPress={() => navigation && navigation.navigate && navigation.navigate("SignUp")}
+            onPress={() => navigation && navigation.navigate && navigation.navigate("Signup")}
           >
             Sign Up
-          </Text>
+          </Text> */}
         </Text>
       </View>
     </View>
@@ -361,6 +377,20 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  routeInfoBox: {
+    backgroundColor: '#e8f5e9',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 10,
+    alignItems: 'center',
+    elevation: 2,
+  },
+  routeInfoText: {
+    fontSize: 16,
+    color: '#2e7d32',
+    marginVertical: 2,
+    fontWeight: 'bold',
+  },
   container: { flex: 1, backgroundColor: "#fff" },
   navbar: {
     top:10,
