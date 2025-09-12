@@ -38,6 +38,7 @@ function computeScore({ trafficMinutes, aqi, pollutants, sensitivityMap }) {
 // Optimize endpoint
 router.post("/optimize", async (req, res) => {
   try {
+    console.log('--- /api/routes/optimize called ---');
     const token = req.headers.authorization
       ? req.headers.authorization.split(" ")[1]
       : null;
@@ -47,20 +48,36 @@ router.post("/optimize", async (req, res) => {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         user = await User.findById(decoded.id);
+        console.log('User found:', user ? user._id : 'none');
       } catch (e) {
-        /* ignore invalid token */
+        console.log('Invalid token');
       }
     }
 
-    const { source, destination, healthCondition, preferQuick } = req.body;
-    if (!source || !destination) {
-      return res.status(400).json({ error: "source and destination required" });
+    let { source, destination, healthCondition, preferQuick } = req.body;
+    console.log('Received source:', source, 'destination:', destination);
+    if (source && destination) {
+      console.log(`Source coords: lat=${source.lat}, lng=${source.lng}`);
+      console.log(`Destination coords: lat=${destination.lat}, lng=${destination.lng}`);
+    }
+    // Accept arrays or objects for source/destination
+    if (Array.isArray(source)) {
+      source = { lng: source[0], lat: source[1] };
+    }
+    if (Array.isArray(destination)) {
+      destination = { lng: destination[0], lat: destination[1] };
+    }
+    if (!source || !destination || !source.lat || !source.lng || !destination.lat || !destination.lng) {
+      return res.status(400).json({ error: "source and destination required and must have lat/lng" });
     }
 
     // Step 1: get routes
+    console.log('Fetching routes from GraphHopper...');
     const routes = await googleService.getRoutes(source, destination);
+    console.log('Routes fetched:', Array.isArray(routes) ? routes.length : 'none');
     if (!routes || routes.length === 0) {
-      return res.status(500).json({ error: "No routes from Google" });
+      console.log('No routes returned from GraphHopper');
+      return res.status(500).json({ error: "No routes from GraphHopper" });
     }
 
     // Prepare sensitivity map
@@ -75,38 +92,49 @@ router.post("/optimize", async (req, res) => {
     }
 
     // Step 2: evaluate each route
+    console.log('Enriching routes...');
     const enriched = await Promise.all(
-      routes.map(async (route) => {
-        const durationSec =
-          route.legs &&
-          route.legs[0] &&
-          route.legs[0].duration &&
-          route.legs[0].duration.value
-            ? route.legs[0].duration.value
-            : 9999;
+      routes.map(async (route, idx) => {
+        try {
+          const durationSec =
+            route.legs &&
+            route.legs[0] &&
+            route.legs[0].duration &&
+            route.legs[0].duration.value
+              ? route.legs[0].duration.value
+              : 9999;
 
-        const trafficMinutes = Math.round(durationSec / 60);
+          const trafficMinutes = Math.round(durationSec / 60);
 
-        const pollutants = await airQualityService.getPollutantsFromPolyline(
-          route.overview_polyline
-        );
+          // Try multiple polyline keys for GraphHopper
+          const polyline = route.overview_polyline || route.points || route.polyline || null;
+          if (!polyline) {
+            console.log(`Route ${idx} has no polyline property`);
+          }
 
-        const { score, components } = computeScore({
-          trafficMinutes,
-          aqi: pollutants.aqi || 5,
-          pollutants,
-          sensitivityMap
-        });
+          const pollutants = await airQualityService.getPollutantsFromPolyline(polyline);
 
-        return {
-          ...route,
-          pollutants,
-          trafficMinutes,
-          score,
-          scoreComponents: components
-        };
+          const { score, components } = computeScore({
+            trafficMinutes,
+            aqi: pollutants.aqi || 5,
+            pollutants,
+            sensitivityMap
+          });
+
+          return {
+            ...route,
+            pollutants,
+            trafficMinutes,
+            score,
+            scoreComponents: components
+          };
+        } catch (err) {
+          console.log(`Error enriching route ${idx}:`, err.message);
+          return null;
+        }
       })
     );
+    console.log('Routes enriched:', enriched.length);
 
     // Step 3: bias for preferQuick
     if (preferQuick) {
@@ -117,6 +145,9 @@ router.post("/optimize", async (req, res) => {
 
     const best = enriched[0];
     const alternatives = enriched;
+
+    console.log('Best route object:', JSON.stringify(best, null, 2));
+    console.log('Best route polyline:', best && (best.overview_polyline || best.points || best.polyline || 'No polyline found'));
 
     // Step 4: award Green Points
     let awarded = 0;

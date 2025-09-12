@@ -1,8 +1,8 @@
 import React, { useState } from "react";
+import decodePolyline from "./utils/decodePolyline";
 import { View, Text, TextInput, Button, StyleSheet } from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
 import axios from "axios";
-
 
 export default function HomeScreen() {
   const [source, setSource] = useState("");
@@ -11,54 +11,71 @@ export default function HomeScreen() {
   const [mapCenter, setMapCenter] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // TODO: Replace with your actual Google Maps Geocoding API key
-  const GEOTAG_API_KEY = "pk.aa5bbd56aa898cd16d711a045d52a2c9";
+  // TODO: Replace with your actual LocationIQ API key
+  const LOCATIONIQ_API_KEY = "pk.aa5bbd56aa898cd16d711a045d52a2c9";
 
-  // Geocode a place name to lat/lng using Google Maps Geocoding API
+  // Geocode a place name to lat/lng
   const geocodePlace = async (place) => {
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(place)}&key=${GEOTAG_API_KEY}`;
+    const url = `https://us1.locationiq.com/v1/search?key=${LOCATIONIQ_API_KEY}&q=${encodeURIComponent(
+      place
+    )}&format=json`;
     const res = await axios.get(url);
-    if (
-      res.data.status === "OK" &&
-      res.data.results &&
-      res.data.results.length > 0
-    ) {
-      const loc = res.data.results[0].geometry.location;
-      return { lat: loc.lat, lng: loc.lng };
+
+    if (Array.isArray(res.data) && res.data.length > 0) {
+      const loc = res.data[0];
+      return { lat: parseFloat(loc.lat), lng: parseFloat(loc.lon) };
     } else {
       throw new Error(`Could not geocode: ${place}`);
     }
   };
 
   const fetchRoute = async () => {
+    console.log("fetchRoute called");
+    setLoading(true);
     try {
-      setLoading(true);
+      let srcLoc, destLoc;
 
-      // Geocode source and destination
-      const srcLoc = await geocodePlace(source);
-      const destLoc = await geocodePlace(destination);
-
-      // Center map on source
-      setMapCenter({ latitude: srcLoc.lat, longitude: srcLoc.lng });
-
-      // Call your backend API for best route
-      const res = await axios.post("http://localhost:5000/route", {
-        source: [srcLoc.lng, srcLoc.lat], // ORS expects [lng,lat]
-        destination: [destLoc.lng, destLoc.lat],
-      });
-
-      const geometry = res.data.geometry.coordinates;
-      const coords = geometry.map(([lng, lat]) => ({
-        latitude: lat,
-        longitude: lng,
-      }));
-
-      setRouteCoords(coords);
-
-      // Recenter map on first route point
-      if (coords.length > 0) {
-        setMapCenter(coords[0]);
+      try {
+        srcLoc = await geocodePlace(source);
+        console.log("Geocoded source:", srcLoc);
+      } catch (e) {
+        alert("Could not geocode source: " + source);
+        return;
       }
+
+      try {
+        destLoc = await geocodePlace(destination);
+        console.log("Geocoded destination:", destLoc);
+      } catch (e) {
+        alert("Could not geocode destination: " + destination);
+        return;
+      }
+
+      setMapCenter({ latitude: srcLoc.lat, longitude: srcLoc.lng });
+      console.log("Calling backend...");
+
+      const res = await axios.post(
+        "http://192.168.201.163:5000/api/routes/optimize",
+        {
+          source: { lat: srcLoc.lat, lng: srcLoc.lng },
+          destination: { lat: destLoc.lat, lng: destLoc.lng },
+        }
+      );
+
+      console.log("Backend response:", res.data);
+      const bestRoute = res.data.bestRoute;
+      let coords = [];
+
+      if (bestRoute && bestRoute.overview_polyline) {
+        if (typeof bestRoute.overview_polyline === "string") {
+          coords = decodePolyline(bestRoute.overview_polyline);
+        } else if (bestRoute.overview_polyline.points) {
+          coords = decodePolyline(bestRoute.overview_polyline.points);
+        }
+      }
+
+      console.log("Decoded coords:", coords);
+      setRouteCoords(coords);
     } catch (err) {
       console.error(err);
       alert("Error fetching route or geocoding place name");
@@ -96,20 +113,10 @@ export default function HomeScreen() {
             latitudeDelta: 0.5,
             longitudeDelta: 0.5,
           }}
-          region={{
-            latitude: mapCenter.latitude,
-            longitude: mapCenter.longitude,
-            latitudeDelta: 0.5,
-            longitudeDelta: 0.5,
-          }}
         >
           {routeCoords.length > 0 && (
             <>
-              <Polyline
-                coordinates={routeCoords}
-                strokeColor="blue"
-                strokeWidth={4}
-              />
+              <Polyline coordinates={routeCoords} strokeColor="blue" strokeWidth={4} />
               <Marker coordinate={routeCoords[0]} title="Start" />
               <Marker
                 coordinate={routeCoords[routeCoords.length - 1]}
