@@ -1,25 +1,62 @@
 import React, { useState } from "react";
-import decodePolyline from "./utils/decodePolyline";
 import {
   View,
   Text,
   TextInput,
   Button,
   StyleSheet,
+  SafeAreaView,
+  StatusBar,
   TouchableOpacity,
-  Modal,
+  Alert,
 } from "react-native";
 import MapView, { Polyline, Marker } from "react-native-maps";
+import { Image } from "react-native";
 import axios from "axios";
-import { Ionicons } from "@expo/vector-icons"; // for hamburger icon
 
-export default function HomeScreen() {
+// Decode polyline (Google-style encoded polyline)
+function decodePolyline(encoded) {
+  let points = [];
+  let index = 0,
+    lat = 0,
+    lng = 0;
+
+  while (index < encoded.length) {
+    let b,
+      shift = 0,
+      result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlat = result & 1 ? ~(result >> 1) : result >> 1;
+    lat += dlat;
+
+    shift = 0;
+    result = 0;
+    do {
+      b = encoded.charCodeAt(index++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20);
+    let dlng = result & 1 ? ~(result >> 1) : result >> 1;
+    lng += dlng;
+
+    points.push({
+      latitude: lat / 1e5,
+      longitude: lng / 1e5,
+    });
+  }
+  return points;
+}
+
+export default function HomeScreen({ navigation }) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [routeCoords, setRouteCoords] = useState([]);
   const [mapCenter, setMapCenter] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
 
   const LOCATIONIQ_API_KEY = "pk.aa5bbd56aa898cd16d711a045d52a2c9";
 
@@ -28,6 +65,7 @@ export default function HomeScreen() {
       place
     )}&format=json`;
     const res = await axios.get(url);
+
     if (Array.isArray(res.data) && res.data.length > 0) {
       const loc = res.data[0];
       return { lat: parseFloat(loc.lat), lng: parseFloat(loc.lon) };
@@ -37,39 +75,18 @@ export default function HomeScreen() {
   };
 
   const fetchRoute = async () => {
-    console.log("fetchRoute called");
     setLoading(true);
     try {
-      let srcLoc, destLoc;
-
-      try {
-        srcLoc = await geocodePlace(source);
-        console.log("Geocoded source:", srcLoc);
-      } catch (e) {
-        alert("Could not geocode source: " + source);
-        return;
-      }
-
-      try {
-        destLoc = await geocodePlace(destination);
-        console.log("Geocoded destination:", destLoc);
-      } catch (e) {
-        alert("Could not geocode destination: " + destination);
-        return;
-      }
+      let srcLoc = await geocodePlace(source);
+      let destLoc = await geocodePlace(destination);
 
       setMapCenter({ latitude: srcLoc.lat, longitude: srcLoc.lng });
-      console.log("Calling backend...");
 
-      const res = await axios.post(
-        "http://192.168.201.163:5000/api/routes/optimize",
-        {
-          source: { lat: srcLoc.lat, lng: srcLoc.lng },
-          destination: { lat: destLoc.lat, lng: destLoc.lng },
-        }
-      );
+      const res = await axios.post("http://192.168.201.163:5000/api/routes/optimize", {
+        source: { lat: srcLoc.lat, lng: srcLoc.lng },
+        destination: { lat: destLoc.lat, lng: destLoc.lng },
+      });
 
-      console.log("Backend response:", res.data);
       const bestRoute = res.data.bestRoute;
       let coords = [];
 
@@ -81,31 +98,32 @@ export default function HomeScreen() {
         }
       }
 
-      console.log("Decoded coords:", coords);
       setRouteCoords(coords);
     } catch (err) {
       console.error(err);
-      alert("Error fetching route or geocoding place name");
+      Alert.alert("Error", "Could not fetch route");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="green" />
+
       {/* Navbar */}
       <View style={styles.navbar}>
-        <Text style={styles.logo}>GreenPath</Text>
-        <TouchableOpacity style={styles.menuIcon} onPress={() => setMenuVisible(true)}>
-          <Ionicons name="menu" size={32} color="#fff" />
+        <Text style={styles.navTitle}>GreenPath</Text>
+        <TouchableOpacity onPress={() => Alert.alert("Menu", "Drawer will open here")}>
+              <Image source={require("./assets/menu.png")} style={{ width: 28, height: 28, marginTop: 10, top: 10, tintColor: "#f1e8e8ff" }} />
         </TouchableOpacity>
       </View>
 
-      {/* Map - now above inputs, medium box */}
-      {mapCenter && (
-        <View style={styles.mapBox}>
+      {/* Map */}
+      <View style={styles.mapBox}>
+        {mapCenter ? (
           <MapView
-            style={styles.mapMedium}
+            style={styles.map}
             initialRegion={{
               latitude: mapCenter.latitude,
               longitude: mapCenter.longitude,
@@ -117,158 +135,84 @@ export default function HomeScreen() {
               <>
                 <Polyline coordinates={routeCoords} strokeColor="blue" strokeWidth={4} />
                 <Marker coordinate={routeCoords[0]} title="Start" />
-                <Marker
-                  coordinate={routeCoords[routeCoords.length - 1]}
-                  title="End"
-                />
+                <Marker coordinate={routeCoords[routeCoords.length - 1]} title="End" />
               </>
             )}
           </MapView>
-        </View>
-      )}
+        ) : (
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude: 20.5937, // India default
+              longitude: 78.9629,
+              latitudeDelta: 10,
+              longitudeDelta: 10,
+            }}
+          />
+        )}
+      </View>
 
-      {/* Inputs Section - now below map */}
-      <View style={styles.inputsContainer}>
-        <Text style={styles.label}>Source (place name):</Text>
+      {/* Inputs */}
+      <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Chennai"
+          placeholder="Enter Source (e.g. Chennai)"
+          placeholderTextColor="#555"
           value={source}
           onChangeText={setSource}
         />
-
-        <Text style={styles.label}>Destination (place name):</Text>
         <TextInput
           style={styles.input}
-          placeholder="e.g. Erode"
+          placeholder="Enter Destination (e.g. Erode)"
+          placeholderTextColor="#555"
           value={destination}
           onChangeText={setDestination}
         />
 
-        <Button
-          title={loading ? "Loading..." : "Get Route"}
-          onPress={fetchRoute}
-        />
+        <TouchableOpacity style={styles.button} onPress={fetchRoute}>
+          <Text style={styles.buttonText}>{loading ? "Loading..." : "Submit"}</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Slide-out Menu */}
-      <Modal visible={menuVisible} animationType="slide" transparent={true}>
-        <View style={styles.menuOverlay}>
-          <View style={styles.menu}>
-            <View style={styles.menuHeader}>
-              <Text style={styles.menuTitle}>Settings</Text>
-              <TouchableOpacity style={styles.menuCloseIcon} onPress={() => setMenuVisible(false)}>
-                <Ionicons name="close" size={28} color="#388E3C" />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuItemText}>Home</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuItemText}>My Profile</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuItemText}>Health Details</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuItemText}>Green Points</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.menuButton}><Text style={styles.menuButtonText}>Login</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  menuHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  menuCloseIcon: {
-    padding: 4,
-  },
-  menuItem: {
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  menuItemText: {
-    fontSize: 16,
-    color: '#388E3C',
-    fontWeight: '500',
-  },
-  menuButton: {
-    marginTop: 20,
-    backgroundColor: '#388E3C',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  menuButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  mapBox: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 60,
-    marginBottom: 16,
-  },
-  mapMedium: {
-    width: '95%',
-    height: 400,
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
   container: { flex: 1, backgroundColor: "#fff" },
   navbar: {
-    height: 80,
-    top:25,
-    backgroundColor: "#388E3C", // Green theme
-    paddingHorizontal: 20,
+    top:10,
+    height: 90,
+    backgroundColor: "green",
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    elevation: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
+    alignItems: "center",
+    paddingHorizontal: 15,
   },
-  logo: { fontSize: 22, fontWeight: "bold", color: "#fff", letterSpacing: 1 },
-  menuIcon: { padding: 8 },
+  navTitle: { top:15, fontSize: 20, fontWeight: "bold", color: "#fff" },
+  mapBox: {
+    height: "40%",
+    margin: 20,
+    borderRadius: 20,
+    overflow: "hidden",
+    elevation: 10,
+  },
   map: { flex: 1 },
-  inputsContainer: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom:160,
-    width: '100%',
-    padding: 10,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-  },
+  inputContainer: { flex: 1, padding: 20 },
   input: {
-    borderWidth: 1,
+    height: 50,
     borderColor: "#ccc",
-    padding: 10,
+    borderWidth: 1,
+    borderRadius: 30,
     marginBottom: 10,
-    borderRadius: 5,
-  },
-  label: { fontWeight: "bold", marginBottom: 4 },
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    justifyContent: "flex-start",
-  },
-  menu: {
-    width: "70%",
-    height: "100%",
+    paddingHorizontal: 20,
     backgroundColor: "#fff",
-    padding: 20,
   },
-  menuTitle: { fontSize: 18, fontWeight: "bold", marginBottom: 10 },
+  button: {
+    backgroundColor: "green",
+    paddingVertical: 14,
+    borderRadius: 18,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });
