@@ -1,0 +1,31 @@
+greenpath-backend/
+│── server.js                 # Entry point of the app
+│── .env                      # Environment variables (API keys, DB URL, JWT secret)
+│── package.json
+│── package-lock.json
+│
+├── config/
+│   └── db.js                 # MongoDB connection setup
+│
+├── models/                   # MongoDB models
+│   ├── User.js               # User schema (auth, healthCondition, greenPoints)
+│   ├── Report.js             # Crowd-sourced pollution/noise reports
+│   └── RouteHistory.js       # Stores user route choices (for rewards/analytics)
+│
+├── middleware/
+│   └── auth.js               # JWT auth middleware (protect routes)
+│
+├── routes/                   # Express routes
+│   ├── authRoutes.js         # Login/Register endpoints
+│   ├── routeRoutes.js        # /optimize → best route calculation
+│   ├── reportRoutes.js       # Submit & fetch crowd-sourced reports
+│   ├── userRoutes.js         # Profile, green points, leaderboard
+│   └── index.js              # Combines all route files
+│
+├── services/                 # External API integrations
+│   ├── googleService.js      # Google Maps Directions API
+│   ├── airQualityService.js  # Air Quality API (OpenWeather, etc.)
+│   └── trafficService.js     # Traffic evaluation logic (duration, congestion)
+│
+└── utils/
+└── scoring.js            # Scoring logic combining AQI, traffic, health preferences
