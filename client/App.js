@@ -5,7 +5,7 @@ function SignupScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
 
-  const handleSignUp = () => {
+  const handleSignUp = async () => {
     let formErrors = {};
     if (!username.trim()) formErrors.username = "Username is required";
     if (!email.trim()) formErrors.email = "Email is required";
@@ -20,8 +20,21 @@ function SignupScreen({ navigation }) {
     setErrors(formErrors);
 
     if (Object.keys(formErrors).length === 0) {
-      alert(`✅ Account created for: ${username} (${email})`);
-      if (navigation && navigation.navigate) navigation.navigate('Login');
+      try {
+        const res = await axios.post("http://192.168.201.163:5000/api/auth/register", {
+          name: username,
+          email,
+          password,
+        });
+        if (res.data.user) {
+          alert(`✅ Account created for: ${res.data.user.name} (${res.data.user.email})`);
+          if (navigation && navigation.navigate) navigation.navigate('Login');
+        } else {
+          alert(res.data.error || "Signup failed");
+        }
+      } catch (err) {
+        alert("Signup error: " + (err.response?.data?.error || err.message));
+      }
     }
   };
 
@@ -173,6 +186,7 @@ import {
   Button,
   StyleSheet,
   SafeAreaView,
+  ScrollView,
   StatusBar,
   TouchableOpacity,
   Alert,
@@ -446,11 +460,63 @@ function ProfileScreen() {
   );
 }
 
+
+const DATA = [
+  {
+    pollutant: 'PM₂.₅ (Fine particulate matter ≤ 2.5 µm)',
+    Effects:"Asthmam attacks, worsening symptoms, lung cancer",
+    sources: 'Vehicles (diesel + petrol), burning of crop residue, industries, dust, domestic fuel, etc.',
+    effects:
+      'Penetrates deep into the lungs. Causes inflammation, reduces lung function, worsens asthma symptoms, increases hospital visits.',
+  },
+  {
+    pollutant: 'PM₁₀ (coarser particles ≤ 10 µm)',
+    Effects:"Respiratory infection, Decreased lung function, throat and eye iritation",
+    sources: 'Construction dust, road dust, industrial emissions, etc.',
+    effects:
+      'Irritates airways, triggers coughing, throat irritation; less deep penetration than PM₂.₅ but still harmful, especially for sensitive individuals.',
+  },
+  {
+    pollutant: 'SO₂ (Sulfur Dioxide)',
+    Effects:"Chronic brochitis , Cardio vascular stress",
+    sources: 'Coal burning, industries & power plants, some transport sources.',
+    effects:
+      'Can cause bronchoconstriction (narrowing of airways), exacerbate asthma, irritate lung lining.',
+  },
+  {
+    pollutant: 'NO₂ (Nitrogen Dioxide)',
+    Effects:"Reduced lung growth in children",
+    sources: 'Vehicle emissions, especially from high-traffic and diesel engines.',
+    effects:
+      'Causes increased airway reactivity, worsens asthma symptoms; can increase susceptibility to respiratory infections.',
+  },
+  {
+    pollutant: 'O₃ (Ozone, ground-level)',
+    Effects:"Asthma ,lung tissue damage , premature aging",
+    sources: 'Formed by chemical reactions of NOₓ and VOCs under sunlight.',
+    effects:
+      'Irritates lungs, causes chest pain, coughing, shortness of breath; worse during warmer, sunny days.',
+  },
+];
+
 function HealthPersonalizationScreen() {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Health Personalization</Text>
-    </View>
+    <SafeAreaView style={styles1.safe}>
+      <ScrollView contentContainerStyle={styles1.container}>
+        <Text style={styles1.title}>Our Health Concern Chart</Text>
+        {DATA.map((item, idx) => (
+          <View key={idx} style={styles1.card}>
+            <Text style={styles1.pollutant}>{item.pollutant}</Text>
+            <Text style={styles1.label}>Effects(s):</Text>
+            <Text style={styles1.value}>{item.Effects}</Text>
+            <Text style={styles1.label}>Source(s):</Text>
+            <Text style={styles1.value}>{item.sources}</Text>
+            <Text style={styles1.label}>Health Impact:</Text>
+            <Text style={styles1.value}>{item.effects}</Text>
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -502,7 +568,7 @@ function LoginScreen({ navigation }) {
    * @function
    * @returns {void}
    */
-  const handleLogin = () => {
+  const handleLogin = async () => {
     let formErrors = {};
 
     if (!username.trim()) formErrors.username = "Username is required";
@@ -520,8 +586,20 @@ function LoginScreen({ navigation }) {
     setErrors(formErrors);
 
     if (Object.keys(formErrors).length === 0) {
-      alert(`✅ Logged in as: ${username} (${email})`);
-      // navigation.navigate("Home"); // example
+      try {
+        const res = await axios.post("http://192.168.201.163:5000/api/auth/login", {
+          email,
+          password,
+        });
+        if (res.data.user) {
+          alert("✅ Login successful!");
+          // navigation.navigate("Home");
+        } else {
+          alert(res.data.error || "Login failed");
+        }
+      } catch (err) {
+        alert("Login error: " + (err.response?.data?.error || err.message));
+      }
     }
   };
 
@@ -581,35 +659,27 @@ function CustomDrawerContent(props) {
   return (
     <DrawerContentScrollView {...props}>
       <DrawerItemList {...props} />
-      <View style={{ padding: 16, flexDirection: 'row', justifyContent: 'space-between' }}>
-        <TouchableOpacity
-          style={{ backgroundColor: 'green', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', marginRight: 8, flex: 1 }}
-          onPress={() => props.navigation.navigate('Login')}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Login</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{ backgroundColor: 'green', borderRadius: 10, paddingVertical: 12, paddingHorizontal: 24, alignItems: 'center', marginLeft: 8, flex: 1 }}
-          onPress={() => props.navigation.navigate('Sign Up')}
-        >
-          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Sign Up</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Removed Login and Sign Up buttons */}
     </DrawerContentScrollView>
   );
 }
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Drawer.Navigator drawerContent={props => <CustomDrawerContent {...props} />}
+     <NavigationContainer>
+      <Drawer.Navigator
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
           headerShown: false,
-        }}>
+          drawerActiveTintColor: "green",          // active label color
+          drawerActiveBackgroundColor: "#e8f5e9", // light green background (optional)
+          drawerInactiveTintColor: "#333",        // inactive label color
+          drawerLabelStyle: { fontSize: 16, fontWeight: "500" },
+        }}
+      >
         <Drawer.Screen name="Home" component={HomeScreen} />
-        {/* <Drawer.Screen name="Profile" component={ProfileScreen} /> */}
-        <Drawer.Screen name="Health Personalization" component={HealthPersonalizationScreen} />
         <Drawer.Screen name="Green Points" component={GreenPointsScreen} />
+        <Drawer.Screen name="Our Supports" component={HealthPersonalizationScreen} />
         <Drawer.Screen name="Login" component={LoginScreen} />
         <Drawer.Screen name="Sign Up" component={SignupScreen} />
       </Drawer.Navigator>
@@ -779,5 +849,50 @@ valueText: {
     fontSize: 14,
     color: "#444",
     fontWeight: "500",
+  },
+});
+
+const styles1 = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#f8f9fa', paddingTop: 70 },
+  container: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+    paddingTop: 0,
+    minHeight: '100%',
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#388e3c',
+    textAlign: 'center',
+  },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 18,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  pollutant: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#388e3c',
+    marginBottom: 8,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 6,
+    color: '#555',
+  },
+  value: {
+    fontSize: 15,
+    color: '#333',
+    marginBottom: 4,
   },
 });
