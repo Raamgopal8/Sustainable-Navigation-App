@@ -138,6 +138,7 @@ function HomeScreen({ navigation }) {
       const res = await axios.post("http://192.168.201.163:5000/api/routes/optimize", {
         source: { lat: srcLoc.lat, lng: srcLoc.lng },
         destination: { lat: destLoc.lat, lng: destLoc.lng },
+        healthCondition: health,
       });
 
       const bestRoute = res.data.bestRoute;
@@ -233,7 +234,7 @@ function HomeScreen({ navigation }) {
             />
             <TextInput
               style={styles.input}
-              placeholder="Enter Health Condition (e.g. asthma)"
+              placeholder="Enter your health concern (e.g. asthma)"
               placeholderTextColor="#555"
               value={health}
               onChangeText={setHealth}
