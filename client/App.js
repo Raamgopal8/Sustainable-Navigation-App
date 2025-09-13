@@ -1,6 +1,6 @@
-
-import React, { useState } from "react";
 import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect, useState } from "react";
+import { AnimatedCircularProgress } from "react-native-circular-progress";
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 // import {Signup} from './Signup';
 import {
@@ -85,13 +85,31 @@ const Auth = () => {
   };
 }
 
+const GreenPoints = ({ points }) => {
+ const [progress, setProgress] = useState(0);
+  // Animate the progress value
+  useEffect(() => {
+    let start = 0;
+    const interval = setInterval(() => {
+      start += 2; // speed of increment
+      if (start >= points) {
+        start = points;
+        clearInterval(interval);
+      }
+      setProgress(start);
+    }, 20); // interval speed
+    return () => clearInterval(interval);
+  }, [points]); 
+}
+
 function HomeScreen({ navigation }) {
   const [source, setSource] = useState("");
   const [destination, setDestination] = useState("");
   const [routeCoords, setRouteCoords] = useState([]);
   const [mapCenter, setMapCenter] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [routeInfo, setRouteInfo] = useState(null); // { distance, duration }
+  const [routeInfo, setRouteInfo] = useState(null);
+  const [health,setHealth]=useState(""); // { distance, duration }
 
   const LOCATIONIQ_API_KEY = "pk.aa5bbd56aa898cd16d711a045d52a2c9";
 
@@ -213,6 +231,13 @@ function HomeScreen({ navigation }) {
               value={destination}
               onChangeText={setDestination}
             />
+            <TextInput
+              style={styles.input}
+              placeholder="Enter Health Condition (e.g. asthma)"
+              placeholderTextColor="#555"
+              value={health}
+              onChangeText={setHealth}
+            />
             <TouchableOpacity style={styles.button} onPress={fetchRoute}>
               <Text style={styles.buttonText}>{loading ? "Loading..." : "Submit"}</Text>
             </TouchableOpacity>
@@ -251,9 +276,36 @@ function HealthPersonalizationScreen() {
 }
 
 function GreenPointsScreen() {
+  const [progress, setProgress] = useState(0);
+  const points = 320; // Replace with actual points from backend/user data
+  useEffect(() => {
+    let start = 0;
+    const interval = setInterval(() => {
+      start += 2;
+      if (start >= points) {
+        start = points;
+        clearInterval(interval);
+      }
+      setProgress(start);
+    }, 20);
+    return () => clearInterval(interval);
+  }, [points]);
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Green Points</Text>
+    <View style={styles.container2}>
+      <Text style={styles.heading2}>🌱 Your Green Points</Text>
+      <View style={styles.gauge}>
+        <AnimatedCircularProgress
+          size={200}
+          width={15}
+          fill={(progress / 500) * 100}
+          tintColor="#66bb6a"
+          backgroundColor="#e0e0e0"
+          duration={500}
+        >
+          {() => <Text style={styles.progressText}>{progress}</Text>}
+        </AnimatedCircularProgress>
+      </View>
+      <Text style={styles.label2}>Eco Score (out of 500)</Text>
     </View>
   );
 }
@@ -485,5 +537,37 @@ const styles = StyleSheet.create({
   signupLink: {
     color: "#2e7d32",
     fontWeight: "bold",
+  },
+   container2: {
+    top:60,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 30,
+    borderRadius: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    alignItems: "center",
+    width: 350,
+    alignSelf: "center",
+  },
+  heading2: {
+    marginBottom: 20,
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#1b5e20",
+  },
+  gauge: {
+    marginBottom: 15,
+  },
+  progressText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2e7d32",
+  },
+  label2: {
+    fontSize: 14,
+    color: "#444",
+    fontWeight: "500",
   },
 });
