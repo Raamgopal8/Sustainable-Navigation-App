@@ -15,7 +15,7 @@ const defaultSensitivity = {
   general: {}
 };
 
-// Helper: compute score
+//compute score
 function computeScore({ trafficMinutes, aqi, pollutants, sensitivityMap }) {
   const TRAFFIC_WEIGHT = 1.0;
   const AQI_WEIGHT = 50.0;
@@ -26,7 +26,6 @@ function computeScore({ trafficMinutes, aqi, pollutants, sensitivityMap }) {
     const val = pollutants[poll] || 0;
     healthPenalty += val * w;
   }
-
   const score =
     TRAFFIC_WEIGHT * trafficMinutes +
     AQI_WEIGHT * aqi +
@@ -35,7 +34,7 @@ function computeScore({ trafficMinutes, aqi, pollutants, sensitivityMap }) {
   return { score, components: { trafficMinutes, aqi, healthPenalty } };
 }
 
-// Optimize endpoint
+
 router.post("/optimize", async (req, res) => {
   try {
     const token = req.headers.authorization

@@ -346,12 +346,15 @@ function HomeScreen({ navigation }) {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="green" />
       {/* Navbar */}
-      <View style={styles.navbar}>
-        <Text style={styles.navTitle}>GreenPath</Text>
-        <TouchableOpacity onPress={() => navigation.openDrawer()}>
-          <Image source={require("./assets/menu.png")} style={{ width: 28, height: 28, marginTop: 10, top: 10, tintColor: "#fff" }} />
-        </TouchableOpacity>
-      </View>
+        <View style={styles.navbar}>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Image source={require("./assets/logo.png")} style={{ width: 32, height: 32,top:14, marginRight: 8 }} />
+            <Text style={styles.navTitle}>GreenPath</Text>
+          </View>
+          <TouchableOpacity onPress={() => navigation.openDrawer()}>
+            <Image source={require("./assets/menu.png")} style={{ width: 28, height: 28, marginTop: 10, top: 10, tintColor: "#fff" }} />
+          </TouchableOpacity>
+        </View>
       {/* Map */}
       <View style={styles.mapBox}>
         <MapView
