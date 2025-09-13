@@ -177,45 +177,60 @@ function HomeScreen({ navigation }) {
       </View>
       {/* Map */}
       <View style={styles.mapBox}>
-        {mapCenter ? (
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: mapCenter.latitude,
-              longitude: mapCenter.longitude,
-              latitudeDelta: 0.5,
-              longitudeDelta: 0.5,
-            }}
-          >
-            {routeCoords.length > 0 && (
-              <>
-                <Polyline coordinates={routeCoords} strokeColor="blue" strokeWidth={4} />
-                <Marker coordinate={routeCoords[0]} title="Start" />
-                <Marker coordinate={routeCoords[routeCoords.length - 1]} title="End" />
-              </>
-            )}
-          </MapView>
-        ) : (
-          <MapView
-            style={styles.map}
-            initialRegion={{
-              latitude: 20.5937, // India default
-              longitude: 78.9629,
-              latitudeDelta: 10,
-              longitudeDelta: 10,
-            }}
-          />
-        )}
+        <MapView
+          style={styles.map}
+         
+  initialRegion={
+  mapCenter
+    ? {
+        latitude: mapCenter.latitude,
+        longitude: mapCenter.longitude,
+        latitudeDelta: 0.5,
+        longitudeDelta: 0.5,
+      }
+    : {
+        latitude: 22.5937,   // Center of India
+        longitude: 78.9629,
+        latitudeDelta: 25,
+        longitudeDelta: 25,
+      }
+}
+
+        >
+          {routeCoords.length > 0 && (
+            <>
+              <Polyline coordinates={routeCoords} strokeColor="blue" strokeWidth={4} />
+              <Marker coordinate={routeCoords[0]} title="Start" />
+              <Marker coordinate={routeCoords[routeCoords.length - 1]} title="End" />
+            </>
+          )}
+        </MapView>
       </View>
       {/* Inputs or Route Info */}
       <View style={styles.inputContainer}>
         {routeInfo ? (
-          <View style={styles.routeInfoBox}>
-            <Text style={styles.routeInfoText}>Source: {source}</Text>
-            <Text style={styles.routeInfoText}>Destination: {destination}</Text>
-            <Text style={styles.routeInfoText}>Distance: {routeInfo.distance ? (routeInfo.distance / 1000).toFixed(2) + ' km' : '-'}</Text>
-            <Text style={styles.routeInfoText}>Time Taken: {routeInfo.duration ? Math.ceil(routeInfo.duration / 60) + ' min' : '-'}</Text>
-          </View>
+        <View style={styles.routeInfoBox}>
+  <View style={styles.routeInfoRow}>
+    <Text style={styles.labelText}>Source:</Text>
+    <Text style={styles.valueText}>{source}</Text>
+  </View>
+  <View style={styles.routeInfoRow}>
+    <Text style={styles.labelText}>Destination:</Text>
+    <Text style={styles.valueText}>{destination}</Text>
+  </View>
+  <View style={styles.routeInfoRow}>
+    <Text style={styles.labelText}>Distance:</Text>
+    <Text style={styles.valueText}>
+      {routeInfo.distance ? (routeInfo.distance / 1000).toFixed(2) + ' km' : '-'}
+    </Text>
+  </View>
+  <View style={styles.routeInfoRow}>
+    <Text style={styles.labelText}>Time Taken:</Text>
+    <Text style={styles.valueText}>
+      {routeInfo.duration ? Math.ceil(routeInfo.duration / 60) + ' min' : '-'}
+    </Text>
+  </View>
+</View>
         ) : (
           <>
             <TextInput
@@ -438,12 +453,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     elevation: 2,
   },
-  routeInfoText: {
-    fontSize: 16,
-    color: '#2e7d32',
-    marginVertical: 2,
-    fontWeight: 'bold',
-  },
+  // New styles for better layout and appearance
+routeInfoBox: {
+  backgroundColor: '#f5f5f5',
+  borderRadius: 10,
+  padding: 15,
+  marginHorizontal: 10,
+  marginTop: -10,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3,
+},
+routeInfoRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  marginVertical: 4,
+},
+labelText: {
+  fontSize: 16,
+  fontWeight: 'bold',
+  color: '#333',
+},
+valueText: {
+  fontSize: 16,
+  color: '#2e7d32',
+},
   container: { flex: 1, backgroundColor: "#fff" },
   navbar: {
     top:10,
